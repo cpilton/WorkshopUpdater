@@ -1,6 +1,5 @@
 package com.callumpilton;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -9,18 +8,16 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
-    static List<Date> dates = new ArrayList<Date>();
-    static String prevDirectory;
     static int retry = 0;
     static int count = 0;
     static int dirCount = 0;
     static int updates = 0;
-    static int files = 0;
     static List<String> updateLinks = new ArrayList<String>();
     static List<String> failed = new ArrayList<String>();
 
     public static void main(String[] args) {
         String nam = System.getProperty("user.dir");
+        //String nam = "D:\\Program Files\\Cities Skylines\\Files\\Mods\\test";
         File dir = new File(nam);
 
         CountFolders(dir);
@@ -30,13 +27,9 @@ public class Main {
     }
 
     static void CountFolders(File aFile) {
-        if (aFile.isFile()) {
-            files++;
-        }
-        else if (aFile.isDirectory()) {
-            if (files > 0 && aFile.getName().matches(".*\\d.*")) {
+        if (aFile.isDirectory()) {
+            if (aFile.getName().matches(".*\\d.*")) {
                 dirCount++;
-                files = 0;
             }
             File[] listOfFiles = aFile.listFiles();
             if(listOfFiles!=null) {
@@ -47,76 +40,57 @@ public class Main {
     }
 
     static void Process(File aFile) {
-        if (aFile.isFile()) {
-            dates.add(new Date(aFile.lastModified()));
-        }
-        else if (aFile.isDirectory()) {
-            if (!dates.isEmpty()) {
-                Date newestDate = getNewestFile(dates);
-                dates.clear();
-                if(prevDirectory != null && prevDirectory.matches(".*\\d.*")) {
-                    String[] intID = prevDirectory.split(" ");
-                    intID = intID[0].split("_");
-                    try {
-                        Date latestVersion = getLatestVersion(Integer.parseInt(intID[0]));
+        if (aFile.isDirectory()) {
+            if (aFile.getName().matches(".*\\d.*")) {
+            Date newestDate = new Date(aFile.lastModified());
+            String[] intID = aFile.getName().split(" ");
+            intID = intID[0].split("_");
+            try {
+                Date latestVersion = getLatestVersion(Integer.parseInt(intID[0]));
 
-                        if (latestVersion.after(newestDate)) {
-                            updates++;
-                            updateLinks.add(intID[0]);
-                        }
-                    } catch (NumberFormatException e) {
-                        //wrong format
-                    }
-
+                if (latestVersion.after(newestDate)) {
+                    updates++;
+                    updateLinks.add(intID[0]);
                 }
+            } catch (NumberFormatException e) {
+                //wrong format
             }
+
+            count++;
+            try {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            System.out.println("Checked " + count + "/" + dirCount + " workshop items. Found " + updates + " updates.");
+
+            System.out.println("\nUpdate Links:");
+            if (updateLinks.isEmpty()) {
+                System.out.println("None");
+            }
+            for (String link : updateLinks) {
+                System.out.println("https://steamcommunity.com/sharedfiles/filedetails/?id=" + link);
+            }
+            System.out.println("\nFailed to Check:");
+            if (failed.isEmpty()) {
+                System.out.println("None");
+            }
+            for (String link : failed) {
+                System.out.println("https://steamcommunity.com/sharedfiles/filedetails/?id=" + link);
+            }
+        }
 
             File[] listOfFiles = aFile.listFiles();
             if (listOfFiles != null) {
                 for (int i = 0; i < listOfFiles.length; i++)
                     Process(listOfFiles[i]);
             }
-
-            prevDirectory = aFile.getName();
-            if (prevDirectory.matches(".*\\d.*")) {
-            count++;
-                try {
-                    new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                System.out.println("Checked " + count + "/" + dirCount + " workshop items. Found " + updates + " updates.");
-
-                System.out.println("\nUpdate Links:");
-                if (updateLinks.isEmpty()) {
-                    System.out.println("None");
-                }
-                for (String link : updateLinks) {
-                    System.out.println("https://steamcommunity.com/sharedfiles/filedetails/?id=" + link);
-                }
-                System.out.println("\nFailed to Check:");
-                if (failed.isEmpty()) {
-                    System.out.println("None");
-                }
-                for (String link : failed) {
-                    System.out.println("https://steamcommunity.com/sharedfiles/filedetails/?id=" + link);
-                }
-            }
-        }
-    }
-
-    static Date getNewestFile(List<Date> dates) {
-        Date newestDate = dates.get(0);
-        for(Date newDate : dates) {
-            if(newDate.after(newestDate)) {
-                newestDate = newDate;
-            }
         }
 
-        return newestDate;
     }
 
     static Date getLatestVersion(int id) {
