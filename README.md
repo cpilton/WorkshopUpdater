@@ -1,4 +1,4 @@
-# WorkshopUpdater
+# Steam Workshop Update Checker
 Automatically Scans the Steam Workshop for item Updates
 
 Place WorkshopUpdater.jar in the folder containing your workshop items and run from the commandline:
